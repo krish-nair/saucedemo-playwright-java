@@ -1,0 +1,62 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  branches:
+    include:
+      - main   # Set the branch you want to trigger the pipeline
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Define the JDK version you are using
+  JAVA_HOME: '/usr/lib/jvm/adoptopenjdk-11-hotspot'
+  MAVEN_OPTS: '-Xmx1024m'
+
+steps:
+# Step 1: Checkout your repository
+- task: Checkout@v2
+  inputs:
+    persistCredentials: true
+
+# Step 2: Set up JDK
+- task:
+  inputs:
+    jdkVersionOption: '1.11'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+    checkLatest: true
+
+# Step 3: Cache Maven dependencies
+- task:
+  inputs:
+    path: $(MavenCache)
+    key: 'maven | "$(Agent.OS)" | pom.xml'
+    restoreKeys: |
+      maven | "$(Agent.OS)"
+
+# Step 4: Install Maven dependencies
+- task:
+  inputs:
+    goals: 'install -DskipTests=true'
+
+# Step 5: Run Tests (Playwright + TestNG)
+- task:
+  inputs:
+    goals: 'test'
+
+# Step 6: Publish TestNG results (JUnit format)
+- task:
+  inputs:
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    failTaskOnFailedTests: true
+
+# Step 7: Publish Playwright screenshots or artifacts (if any)
+- task:
+  inputs:
+    ArtifactName: 'playwright-screenshots'
+    TargetPath: $(System.DefaultWorkingDirectory)/screenshots/  # Change this path to where screenshots are saved
+    publishLocation: 'Container'
