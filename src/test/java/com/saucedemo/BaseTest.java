@@ -35,7 +35,11 @@ public class BaseTest {
         homePage = new HomePage(page);
 
     }
-
+    @Test
+    public void verifyLogin(){
+        homePage.login(prop.getProperty("uname"), prop.getProperty("pwd"));
+        System.out.println("Logged in...");
+    }
 
     @AfterSuite
     public void tearDown(){
